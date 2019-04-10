@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="cd057c7f-fd41-4f4f-9ebb-5f06738deae0" basePath="/soapclient">
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="c73d935c-f717-4ff9-abd9-a34debfbbc28" >
+		<wsc:connection wsdlLocation="https://intense-scrubland-62700.herokuapp.com/ws/countries.wsdl" service="CountriesPortService" port="CountriesPortSoap11" address="https://intense-scrubland-62700.herokuapp.com:443/ws" />
+	</wsc:config>
+	<flow name="soap_webservice_consumerFlow" doc:id="b135329e-9404-4aaa-b31b-70a6c44fc5a0" >
+		<http:listener doc:name="Listener" doc:id="791d1f40-b052-4261-b97d-69ac1266cb91" config-ref="HTTP_Listener_config" path="/country"/>
+		<set-variable value="#[attributes.queryParams.val]" doc:name="Set Variable" doc:id="e87b970e-b11a-4be2-bb11-80670624539e" variableName="country"/>
+		<logger level="INFO" doc:name="Logger" doc:id="33bf6697-461e-43bf-9244-ba890cb314ce" message="#[%dw 2.0
+output application/java
+---
+vars.country]" category="monitoring"/>
+		<ee:transform doc:name="Transform Message" doc:id="d5432a8a-5de9-4ae1-b4ef-3e5f4971d31e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://spring.io/guides/gs-producing-web-service
+---
+{
+	ns0#getCountryRequest: {
+		ns0#name: vars.country as String
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume operation="getCountry" doc:name="Consume" doc:id="326873c2-a4ae-4101-aa17-bcf71c97593e" config-ref="Web_Service_Consumer_Config"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b676c515-0b2a-4c17-9b66-520c7013235f" message="#[payload]" category="monitoring"/>
+	</flow>
+</mule>
