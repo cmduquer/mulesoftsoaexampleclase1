@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
-	xmlns:http="http://www.mulesoft.org/schema/mule/http"
-	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd
-http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
 	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="cd057c7f-fd41-4f4f-9ebb-5f06738deae0" basePath="/soapclient">
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
@@ -19,6 +20,7 @@ http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/
 output application/java
 ---
 vars.country]" category="monitoring"/>
+		<logger level="INFO" doc:name="Logger" doc:id="899d7fd2-2766-4b76-89f5-eabaa28f5651" message="#[attributes.queryParams.method]" category="request" />
 		<ee:transform doc:name="Transform Message" doc:id="d5432a8a-5de9-4ae1-b4ef-3e5f4971d31e" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
@@ -32,7 +34,21 @@ ns ns0 http://spring.io/guides/gs-producing-web-service
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<wsc:consume operation="getCountry" doc:name="Consume" doc:id="326873c2-a4ae-4101-aa17-bcf71c97593e" config-ref="Web_Service_Consumer_Config"/>
+		<wsc:consume operation="getCountry" doc:name="Consume" doc:id="326873c2-a4ae-4101-aa17-bcf71c97593e" config-ref="Web_Service_Consumer_Config" />
+		<ee:transform doc:name="Transform Message" doc:id="afefea3a-865c-4fa7-8156-a8bf1f0a4f4d">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://spring.io/guides/gs-producing-web-service
+---
+{
+	capital: payload.body.ns0#getCountryResponse.ns0#country.ns0#capital default "",
+	name: payload.body.ns0#getCountryResponse.ns0#country.ns0#name default "",
+	currency: payload.body.ns0#getCountryResponse.ns0#country.ns0#currency default "",
+	population: payload.body.ns0#getCountryResponse.ns0#country.ns0#population default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="b676c515-0b2a-4c17-9b66-520c7013235f" message="#[payload]" category="monitoring"/>
 	</flow>
 </mule>
